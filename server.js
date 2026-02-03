@@ -17,12 +17,8 @@ app.post("/api/chat", async (req, res) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "deepseek-coder:6.7b",
-        prompt: `You are a senior software engineer.
-Answer concisely and correctly.
-Focus on code quality and correctness.
-
-User question:
+        model: "chadgpt:latest",
+        prompt: `User question:
 ${message}`,
         stream: false,
         options: { temperature: 0.2, top_p: 0.9 },
@@ -53,14 +49,10 @@ app.post("/api/chat/stream", async (req, res) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "deepseek-coder-modified:latest",
-        prompt: `You are a senior software engineer.
-Answer concisely and correctly.
-Focus on code quality and correctness.
-
-User question:
+        model: "chadgpt:latest",
+        prompt: `User question:
 ${message}`,
-        stream: true, // ← streaming ON
+        stream: true, 
         options: { temperature: 0.2, top_p: 0.9 },
       }),
     });
