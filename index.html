@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CodePilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+/* ─── Reset & Tokens ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base:      #0a0a0f;
+  --bg-surface:   #12121a;
+  --bg-card:      #1a1a26;
+  --bg-input:     #16161f;
+  --border:       rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.14);
+  --text-primary: #e8e8f0;
+  --text-muted:   #6b6b7b;
+  --accent:       #7c6aff;
+  --accent-dim:   rgba(124,106,255,0.15);
+  --accent-glow:  rgba(124,106,255,0.35);
+  --green:        #34d399;
+  --red:          #f87171;
+  --radius:       12px;
+  --radius-sm:    8px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Syne', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ─── Layout Shell ────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ─── Header ──────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 0 18px;
+  flex-shrink: 0;
+}
+.header-icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 18px var(--accent-glow);
+}
+.header-icon svg { width: 22px; height: 22px; }
+.header-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.header-badge {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--green);
+  background: rgba(52,211,153,0.1);
+  border: 1px solid rgba(52,211,153,0.25);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: flex; align-items: center; gap: 6px;
+}
+.header-badge .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+/* ─── Messages Scroll ─────────────────────────────────────────── */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.messages::-webkit-scrollbar { width: 5px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── Empty State ─────────────────────────────────────────────── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  opacity: 0.55;
+  pointer-events: none;
+  position: absolute;
+  inset: 100px 0 140px;
+}
+.empty-state.hidden { display: none; }
+.empty-state svg { width: 48px; height: 48px; opacity: 0.6; }
+.empty-state p { font-size: 15px; font-weight: 500; color: var(--text-muted); }
+.empty-state span { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); opacity: 0.7; }
+
+/* ─── Suggestion Chips ────────────────────────────────────────── */
+.suggestions {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center;
+  margin-top: 14px;
+}
+.suggestions.hidden { display: none; }
+.chip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all .2s;
+  pointer-events: auto;
+}
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ─── Message Bubbles ─────────────────────────────────────────── */
+.msg {
+  display: flex;
+  gap: 12px;
+  animation: fadeUp .25s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-avatar {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.msg-avatar.user   { background: var(--accent-dim); border: 1px solid var(--accent); }
+.msg-avatar.bot    { background: var(--bg-card); border: 1px solid var(--border); }
+
+.msg-content {
+  flex: 1;
+  min-width: 0;
+}
+.msg-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.msg-label .time {
+  font-weight: 400;
+  margin-left: 8px;
+  opacity: 0.6;
+}
+.msg-body {
+  font-size: 18px;
+  line-height: 1.9;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+.msg-body.user-msg {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  display: inline-block;
+}
+
+/* ─── Markdown / Code Rendering ───────────────────────────────── */
+.msg-body pre {
+  background: #0d0d14;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin: 10px 0;
+  position: relative;
+}
+.msg-body pre .code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.msg-body pre .code-lang {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.msg-body pre .copy-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all .18s;
+}
+.msg-body pre .copy-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.msg-body pre code {
+  display: block;
+  padding: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.msg-body code:not(pre code) {
+  background: rgba(124,106,255,0.1);
+  border: 1px solid rgba(124,106,255,0.25);
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: #c4b5fd;
+}
+.msg-body h1, .msg-body h2, .msg-body h3 {
+  margin: 14px 0 6px;
+  font-family: 'Syne', sans-serif;
+  color: var(--text-primary);
+}
+.msg-body h1 { font-size: 20px; }
+.msg-body h2 { font-size: 17px; }
+.msg-body h3 { font-size: 15px; }
+.msg-body ul, .msg-body ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.msg-body li { margin-bottom: 4px; }
+.msg-body p  { margin-bottom: 8px; }
+.msg-body strong { color: #fff; }
+.msg-body a { color: var(--accent); text-decoration: none; }
+.msg-body a:hover { text-decoration: underline; }
+.msg-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+.msg-body blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+  padding: 8px 14px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin: 8px 0;
+  color: var(--text-muted);
+}
+
+/* ─── Typing Indicator ────────────────────────────────────────── */
+.typing-dots {
+  display: inline-flex; gap: 4px; align-items: center; height: 22px;
+}
+.typing-dots span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: bounce .9s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: .15s; }
+.typing-dots span:nth-child(3) { animation-delay: .3s;  }
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+  30%           { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ─── Token Counter (streaming) ───────────────────────────────── */
+.token-counter {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.token-counter.visible { opacity: 1; }
+
+/* ─── Input Area ──────────────────────────────────────────────── */
+.input-shell {
+  flex-shrink: 0;
+  padding: 14px 0 28px;
+}
+.input-wrapper {
+  position: relative;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px 12px;
+  transition: border-color .25s, box-shadow .25s;
+}
+.input-wrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.input-wrapper textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text-primary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 44px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.input-wrapper textarea::placeholder { color: var(--text-muted); }
+.input-wrapper textarea::-webkit-scrollbar { width: 4px; }
+.input-wrapper textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.input-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.input-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex; gap: 12px; align-items: center;
+}
+.model-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+.model-badge svg { width: 13px; height: 13px; opacity: .6; }
+
+.send-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: linear-gradient(135deg, var(--accent), #6f5adc);
+  border: none;
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity .2s, box-shadow .2s;
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+.send-btn:hover { opacity: .88; box-shadow: 0 4px 18px var(--accent-glow); }
+.send-btn:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+.send-btn svg { width: 15px; height: 15px; }
+
+/* ─── Stop Button ─────────────────────────────────────────────── */
+.stop-btn {
+  display: none;
+  align-items: center; gap: 7px;
+  background: rgba(248,113,113,0.12);
+  border: 1px solid rgba(248,113,113,0.35);
+  color: var(--red);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.stop-btn:hover { background: rgba(248,113,113,0.2); }
+.stop-btn.visible { display: flex; }
+.stop-btn svg { width: 14px; height: 14px; }
+
+/* ─── Subtle background grain ─────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+.shell { position: relative; z-index: 1; }
+
+/* ─── Glow orb (decorative) ───────────────────────────────────── */
+.glow-orb {
+  position: fixed;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: .12;
+  pointer-events: none;
+  z-index: 0;
+}
+.glow-orb.orb-1 { background: var(--accent); top: -180px; right: -160px; }
+.glow-orb.orb-2 { background: #6f5adc; bottom: -200px; left: -200px; }
+</style>
+</head>
+<body>
+
+<!-- Decorative glows -->
+<div class="glow-orb orb-1"></div>
+<div class="glow-orb orb-2"></div>
+
+<div class="shell">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/>
+      </svg>
+    </div>
+    <div class="header-title">CodePilot</div>
+    <div class="header-badge"><span class="dot"></span> deepseek-coder · 6.7b</div>
+  </header>
+
+  <!-- Messages -->
+  <div class="messages" id="messages">
+    <!-- empty state rendered here -->
+    <div class="empty-state" id="emptyState">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="3 9 21 9"/><circle cx="9" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="15" cy="15" r="1" fill="currentColor"/>
+      </svg>
+      <p>Ask me anything about code</p>
+      <span>I'm backed by a local Ollama instance — no API keys needed.</span>
+    </div>
+  </div>
+
+  <!-- Suggestion Chips -->
+  <div class="suggestions" id="suggestions">
+    <div class="chip" onclick="useChip(this)">Explain async/await in JS</div>
+    <div class="chip" onclick="useChip(this)">Write a binary search in C++</div>
+    <div class="chip" onclick="useChip(this)">How does React useEffect work?</div>
+    <div class="chip" onclick="useChip(this)">REST vs GraphQL?</div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-shell">
+    <div class="input-wrapper">
+      <textarea id="inputBox" placeholder="Ask a coding question…" rows="1" autocomplete="off" spellcheck="false"></textarea>
+      <div class="input-row">
+        <div class="input-meta">
+          <div class="model-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            deepseek-coder:6.7b
+          </div>
+          <span>streaming · local</span>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="handleSend()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/></svg>
+          Send
+        </button>
+        <button class="stop-btn" id="stopBtn" onclick="handleStop()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          Stop
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Marked (markdown parser) ─────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+
+<script>
+// ─── State ─────────────────────────────────────────────────────
+let abortController = null;
+let isStreaming     = false;
+
+const $ = id => document.getElementById(id);
+const messagesEl   = $('messages');
+const emptyState   = $('emptyState');
+const suggestions  = $('suggestions');
+const inputBox     = $('inputBox');
+const sendBtn      = $('sendBtn');
+const stopBtn      = $('stopBtn');
+
+// ─── Auto-resize textarea ──────────────────────────────────────
+inputBox.addEventListener('input', () => {
+  inputBox.style.height = 'auto';
+  inputBox.style.height = inputBox.scrollHeight + 'px';
+});
+
+// ─── Enter key → send ──────────────────────────────────────────
+inputBox.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+// ─── Chip helper ───────────────────────────────────────────────
+function useChip(el) {
+  inputBox.value = el.textContent.trim();
+  inputBox.dispatchEvent(new Event('input'));
+  inputBox.focus();
+}
+
+// ─── Utility: current time ─────────────────────────────────────
+function nowStr() {
+  return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+}
+
+// ─── Hide empty / suggestions once first message sent ─────────
+function hideIdle() {
+  emptyState.classList.add('hidden');
+  suggestions.classList.add('hidden');
+}
+
+// ─── Render markdown + highlight code blocks ──────────────────
+// We use a custom renderer to wrap <pre><code> with a header + copy button.
+const renderer = new marked.Renderer();
+renderer.code = function(code, lang) {
+  const escaped = code
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const langLabel = lang || 'code';
+  return `
+    <pre>
+      <div class="code-header">
+        <span class="code-lang">${langLabel}</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <code class="language-${lang || ''}">${escaped}</code>
+    </pre>`;
+};
+marked.setOptions({ renderer, breaks: true });
+
+function renderMarkdown(text) {
+  const html = marked.parse(text);
+  return html;
+}
+
+function highlightAll(container) {
+  container.querySelectorAll('pre code').forEach(block => {
+    hljs.highlightElement(block);
+  });
+}
+
+// ─── Copy code helper ──────────────────────────────────────────
+function copyCode(btn) {
+  const code = btn.closest('pre').querySelector('code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1200);
+  });
+}
+
+// ─── Append a user message bubble ──────────────────────────────
+function appendUserMsg(text) {
+  hideIdle();
+  const wrap = document.createElement('div');
+  wrap.className = 'msg';
+  wrap.innerHTML = `
+    <div class="msg-avatar user">👤</div>
+    <div class="msg-content">
+      <div class="msg-label">You <span class="time">${nowStr()}</span></div>
+      <div class="msg-body user-msg">${text.replace(/</g,'&lt;')}</div>
+    </div>`;
+  messagesEl.appendChild(wrap);
+  scrollToBottom();
+}
+
+// ─── Append bot message shell (returns live-updatable element) ─
+function appendBotShell() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg';
+  wrap.id = 'botActive';
+  wrap.innerHTML = `
+    <div class="msg-avatar bot">🤖</div>
+    <div class="msg-content">
+      <div class="msg-label">CodePilot <span class="time">${nowStr()}</span></div>
+      <div class="msg-body" id="botBody"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+      <div class="token-counter" id="tokenCounter">0 tokens</div>
+    </div>`;
+  messagesEl.appendChild(wrap);
+  scrollToBottom();
+  return wrap;
+}
+
+// ─── Scroll helper ─────────────────────────────────────────────
+function scrollToBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// ─── Toggle UI while streaming ─────────────────────────────────
+function setStreaming(val) {
+  isStreaming = val;
+  sendBtn.disabled  = val;
+  stopBtn.classList.toggle('visible', val);
+  inputBox.disabled  = val;
+}
+
+// ─── Stop streaming ───────────────────────────────────────────
+function handleStop() {
+  if (abortController) abortController.abort();
+}
+
+// ─── Main send ─────────────────────────────────────────────────
+async function handleSend() {
+  const text = inputBox.value.trim();
+  if (!text || isStreaming) return;
+
+  inputBox.value = '';
+  inputBox.style.height = 'auto';
+
+  appendUserMsg(text);
+  const botWrap = appendBotShell();
+  const botBody = botWrap.querySelector('#botBody');
+  const tokenCounter = botWrap.querySelector('#tokenCounter');
+
+  setStreaming(true);
+  abortController = new AbortController();
+
+  let rawText   = '';
+  let tokenCount = 0;
+
+  try {
+    const res = await fetch('http://localhost:3000/api/chat/stream', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({ message: text }),
+      signal : abortController.signal,
+    });
+
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    // Show token counter once we start receiving
+    tokenCounter.classList.add('visible');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buf += decoder.decode(value, { stream: true });
+
+      // SSE lines end with \n\n
+      const parts = buf.split('\n\n');
+      buf = parts.pop();                       // keep incomplete tail
+
+      for (const part of parts) {
+        const lines = part.split('\n');
+        let evt = 'data';
+        for (const line of lines) {
+          if (line.startsWith('event:')) { evt = line.slice(6).trim(); continue; }
+          if (!line.startsWith('data:'))  continue;
+
+          const payload = line.slice(5).trim();
+          if (evt === 'done') break;
+          if (evt === 'error') {
+            rawText = '⚠️ Stream error — please try again.';
+            break;
+          }
+
+          try {
+            const json   = JSON.parse(payload);
+            const token  = json.token || '';
+            rawText     += token;
+            tokenCount  += token.split(/\s+/).filter(Boolean).length || 1;
+
+            // Live-render markdown on every chunk
+            botBody.innerHTML = renderMarkdown(rawText);
+            highlightAll(botBody);
+            tokenCounter.textContent = `~${tokenCount} tokens`;
+            scrollToBottom();
+          } catch {}
+        }
+        if (evt === 'done') break;
+      }
+    }
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      // user hit Stop — keep what we have
+    } else {
+      rawText = '⚠️ **Connection error** — is your Ollama server running on port 11434?\n\n`' + (err.message || 'Unknown error') + '`';
+    }
+  }
+
+  // Final render
+  botBody.innerHTML = renderMarkdown(rawText || '*No response received.*');
+  highlightAll(botBody);
+  botWrap.id = '';           // detach live reference
+  setStreaming(false);
+  abortController = null;
+  inputBox.focus();
+}
+</script>
+</body>
+</html>
