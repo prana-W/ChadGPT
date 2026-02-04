@@ -1,52 +1,114 @@
-# ChadGPT 🤖⚡
+# ChadGPT
 
-**ChadGPT** is a modern, local-first chatbot powered by **Ollama** and a **custom-modified version of the DeepSeek-Coder 6.7B parameter LLM**.  
+**ChadGPT** is a modern, **local-first chatbot** powered by **Ollama** and a **custom-modified DeepSeek-Coder 6.7B parameter LLM**.  
 It is designed primarily for **programming assistance**, while still being capable of answering general non-technical questions.
 
-No cloud APIs.  
-No API keys.  
-Runs fully on your machine.
+- No cloud APIs.  
+- No API keys.  
+- Runs fully on your machine.
+
+---
+
+## 🚀 Getting Started
+
+### ✅ Prerequisites
+
+- **Node.js** v18 or newer  
+- **Ollama** installed and available in your PATH  
+
+Install Ollama from:  
+https://ollama.com
+
+Verify installation:
+```bash
+ollama --version
+```
+
+---
+
+## 📦 Installation
+
+```bash
+git clone https://github.com/your-username/chadgpt.git
+cd chadgpt
+npm install
+```
+
+---
+
+## 🔁 Change the Base Model (Optional)
+
+By default, ChadGPT uses **DeepSeek-Coder 6.7B** as the base model.
+
+```js
+// Change this to any base model of your choice
+export const BASE_MODEL = "deepseek-coder:6.7b";
+```
+
+### Edit via terminal
+```bash
+nano constants.js
+```
+
+or
+```bash
+vim constants.js
+```
+
+Example change:
+```js
+export const BASE_MODEL = "llama3.1:8b";
+```
+
+After editing, restart:
+```bash
+npm start
+```
+
+---
+
+## ▶️ Running ChadGPT
+
+```bash
+npm start
+```
+
+Open file:
+```
+index.html
+```
+
+---
+
+## ⏹️ Stopping ChadGPT
+
+Stop server:
+```
+Ctrl + C
+```
+
+Unload model:
+```bash
+npm stop
+```
 
 ---
 
 ## ✨ Features
 
-- 🧠 **DeepSeek-Coder 6.7B (Modified)**  
-  Uses a custom Ollama model with an updated system prompt for better control and consistency.
-
-- 💻 **Code-first intelligence**  
-  Excellent at:
-  - Writing clean, production-ready code  
-  - Explaining algorithms & data structures  
-  - Debugging and refactoring  
-  - Backend & frontend development help  
-
-- 💬 **General conversation support**  
-  Can respond naturally to non-computer-science questions.
-
-- ⚡ **Streaming responses**  
-  Tokens stream live for a smooth, ChatGPT-like experience.
-
-- 🌙 **Modern dark-mode UI**  
-  - Markdown rendering  
-  - Syntax highlighting  
-  - Copy-to-clipboard for code blocks  
-  - Smooth scrolling & typing indicators  
-
-- 🔐 **Fully local & private**  
-  Your prompts and responses never leave your machine.
+- Customizable base model
+- Code-first intelligence
+- Streaming responses
+- Modern dark UI
+- Fully local & private
 
 ---
 
 ## 🏗️ Tech Stack
 
-- **LLM Runtime:** Ollama  
-- **Base Model:** DeepSeek-Coder 6.7B  
-- **Model Customization:** Ollama `Modelfile` (system prompt + parameters)  
-- **Backend:** Node.js + Express  
-- **Frontend:** Vanilla HTML, CSS, JavaScript  
-- **Streaming:** Server-Sent Events (SSE)  
-- **Syntax Highlighting:** highlight.js  
-- **Markdown Parsing:** marked  
-
+- Ollama
+- Node.js + Express
+- Vanilla HTML/CSS/JS
+- SSE Streaming
+- 
 ---
