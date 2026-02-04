@@ -1,11 +1,21 @@
 import express from "express";
 import cors from "cors";
+import {WRAPPER_MODEL, serverPort, modelBaseUrl} from "./constants.js";
 
 const app = express();
-const PORT = 3000;
+const PORT = serverPort;
 
 app.use(cors());
 app.use(express.json());
+
+app.get('/', (req, res) => {
+
+    return res.json({
+        success: true,
+        message: 'ChadGPT server is running.'
+    })
+
+});
 
 // ─── Non-streaming endpoint (kept for reference) ────────────────────────────
 app.post("/api/chat", async (req, res) => {
@@ -13,15 +23,14 @@ app.post("/api/chat", async (req, res) => {
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: "Message is required" });
 
-    const ollamaResponse = await fetch("http://localhost:11434/api/generate", {
+    const ollamaResponse = await fetch(modelBaseUrl + "/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "chadgpt:latest",
+        model: WRAPPER_MODEL,
         prompt: `User question:
 ${message}`,
-        stream: false,
-        options: { temperature: 0.2, top_p: 0.9 },
+        stream: false
       }),
     });
 
@@ -45,15 +54,14 @@ app.post("/api/chat/stream", async (req, res) => {
   res.flushHeaders();
 
   try {
-    const ollamaResponse = await fetch("http://localhost:11434/api/generate", {
+    const ollamaResponse = await fetch(modelBaseUrl + "/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "chadgpt:latest",
+        model: WRAPPER_MODEL,
         prompt: `User question:
 ${message}`,
-        stream: true, 
-        options: { temperature: 0.2, top_p: 0.9 },
+        stream: true
       }),
     });
 
@@ -107,4 +115,8 @@ ${message}`,
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
+
+process.on("exit", code => {
+    console.log("❌ process.exit called with code:", code);
 });

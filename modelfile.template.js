@@ -1,4 +1,6 @@
-FROM deepseek-coder:6.7b
+export function generateModelfile(baseModel) {
+    return `
+FROM ${baseModel}
 
 SYSTEM """
 You are ChadGPT, a local AI assistant running via Ollama.
@@ -17,3 +19,5 @@ When the question is technical or programming-related:
 - Include edge cases when writing code
 - Default languages: JavaScript, TypeScript, C++, Python
 """
+`.trim();
+}
