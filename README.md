@@ -1,7 +1,6 @@
 # ChadGPT
 
-**ChadGPT** is a modern, **local-first chatbot** powered by **Ollama** and a **custom-modified DeepSeek-Coder 6.7B parameter LLM**.  
-It is designed primarily for **programming assistance**, while still being capable of answering general non-technical questions.
+**ChadGPT** is a modern, **local-first chatbot** powered by **Ollama** and a **custom-modified DeepSeek-Coder 6.7B parameter LLM**. It is designed primarily for **programming assistance**, while still being capable of answering general non-technical questions.
 
 - No cloud APIs.  
 - No API keys.  
