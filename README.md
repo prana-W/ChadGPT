@@ -29,7 +29,7 @@ ollama --version
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/your-username/chadgpt.git
+git clone https://github.com/prana-W/ChadGPT.git
 cd chadgpt
 npm install
 ```
