@@ -109,5 +109,6 @@ npm stop
 - Node.js + Express
 - Vanilla HTML/CSS/JS
 - SSE Streaming
-- 
 ---
+
+Made with ❤️ by W.
